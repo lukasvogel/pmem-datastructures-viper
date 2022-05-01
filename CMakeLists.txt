@@ -4,9 +4,7 @@ project(viper)
 set(CMAKE_CXX_STANDARD 17)
 
 ### OPTIONS ###
-option(VIPER_BUILD_PLAYGROUND "Set ON if playground should be built." OFF)
-
-option(VIPER_BUILD_BENCHMARKS "Set OM if benchmarks should be built." OFF)
+option(VIPER_BUILD_BENCHMARKS "Set OM if benchmarks should be built." ON)
 
 option(VIPER_CONCURRENT_QUEUE_PROVIDED "Set ON if the concurrentqueue dependency is provided and should not be
                                         downloaded by Viper." OFF)
@@ -33,19 +31,30 @@ if (NOT ${VIPER_CONCURRENT_QUEUE_PROVIDED})
     target_link_libraries(viper INTERFACE concurrentqueue)
 endif()
 
-# VIPER PLAYGROUND
-if (${VIPER_BUILD_PLAYGROUND})
-    add_executable(playground playground.cpp)
+add_executable(playground playground.cpp)
+target_compile_options(playground PRIVATE -march=native -pthread)
+target_compile_options(playground PRIVATE -O3 -Ofast -mtune=native)
+target_link_libraries(playground viper pthread)
 
-    target_compile_options(playground PRIVATE -march=native -mclwb -pthread)
-    message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-    if (CMAKE_BUILD_TYPE MATCHES Release)
-        message(STATUS "BUILDING RELEASE")
-        target_compile_options(playground PRIVATE -O3 -Ofast -mtune=native)
-    endif()
+add_library(viperlib SHARED
+        pibench/PibenchWrapper.cpp
+        pibench/PibenchWrapper.h
+        include/pibench/tree_api.h)
 
-    target_link_libraries(playground viper pthread)
-endif()
+add_library(viperlibvarsize SHARED
+        pibench/PibenchWrapperVarSize.cpp
+        pibench/PibenchWrapperVarSize.h
+        include/pibench/tree_api.h)
+
+
+target_compile_options(viperlib PRIVATE -march=native -pthread)
+target_compile_options(viperlib PRIVATE -O3 -Ofast -mtune=native)
+target_link_libraries(viperlib viper pthread)
+
+target_compile_options(viperlibvarsize PRIVATE -march=native -pthread)
+target_compile_options(viperlibvarsize PRIVATE -O3 -Ofast -mtune=native)
+target_link_libraries(viperlibvarsize viper pthread)
+
 
 # VIPER BENCHMARKS
 if (${VIPER_BUILD_BENCHMARKS})
